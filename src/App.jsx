@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import './App.css'
-import Loading from './Loading';
+import React, { useEffect, useState } from "react";
+import "./App.css";
+import Loading from "./Loading";
 
 function Weather() {
   const [cityname, setCityname] = useState("");
@@ -10,12 +10,15 @@ function Weather() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Handle Input
   const handleInput = (e) => {
     setCityname(e.target.value);
   };
 
+  // Handle Submit
   const handleSubmit = () => {
     const trimmed = cityname.trim();
+
     if (!trimmed) {
       setError("Please enter a city name");
       return;
@@ -25,64 +28,87 @@ function Weather() {
     setQuery(trimmed);
   };
 
+  // Fetch Weather Data
+  const fetchWeather = async () => {
+    setLoading(true);
+    setError("");
+    setWeather(null);
+
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=6dae0c680675edcbd02e5e03d95b8a81&units=metric`
+      );
+
+      if (!response.ok) {
+        throw new Error("City not found");
+      }
+
+      const data = await response.json();
+
+      const iconCode = data.weather[0].icon;
+      const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+      setWeather(data);
+      setIcon(iconUrl);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // useEffect with setTimeout
   useEffect(() => {
     if (!query) return;
-    const fetchWeather = async () => {
-      setLoading(true);
-      setError("");
-      setWeather(null);
 
-      try {
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=6dae0c680675edcbd02e5e03d95b8a81&units=metric`
-        );
+    const timer = setTimeout(() => {
+      fetchWeather();
+    }, 1000);
 
-        if (!response.ok) {
-          throw new Error("City not found");
-        }
-
-        const data = await response.json();
-        const iconCode = data.weather[0].icon;
-        const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-
-        setWeather(data);
-        setIcon(iconUrl);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeather()
+    return () => clearTimeout(timer);
   }, [query]);
 
   return (
-    <section className='main'>
-      <div className='Heading'>
+    <section className="main">
+      <div className="Heading">
         <div style={{ textAlign: "center", marginTop: "15px" }}>
           <h1>Weather Report</h1>
         </div>
-        <div className='container'>
 
+        <div className="container">
           <input
             type="text"
             value={cityname}
             onChange={handleInput}
             placeholder="Enter city name"
           />
-          <button type='submit' onClick={handleSubmit}  >
+
+          <button type="submit" onClick={handleSubmit}>
             {loading ? <Loading /> : "Check Weather"}
           </button>
-
         </div>
-        {error && <div style={{ color: "red", fontSize: "18px" }}>{error}</div>}
+
+        {error && (
+          <div style={{ color: "red", fontSize: "18px" }}>{error}</div>
+        )}
+
         {weather && (
-          <div className='weatherdata'>
-            <p className='report'>{weather.name}</p>
-            <p className='report'>{weather.main?.temp}°C</p>
-            <p className='report'> {weather.weather?.[0]?.description}<img src={icon} alt='Weather icon' style={{ width: "80px", height: "80px" }} /></p>
-            <p className='report'>Humidity: {weather.main?.humidity}%</p>
+          <div className="weatherdata">
+            <p className="report">{weather.name}</p>
+            <p className="report">{weather.main?.temp}°C</p>
+
+            <p className="report">
+              {weather.weather?.[0]?.description}
+              <img
+                src={icon}
+                alt="Weather icon"
+                style={{ width: "80px", height: "80px" }}
+              />
+            </p>
+
+            <p className="report">
+              Humidity: {weather.main?.humidity}%
+            </p>
           </div>
         )}
       </div>
